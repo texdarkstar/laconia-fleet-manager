@@ -170,3 +170,8 @@ secret.py
 
 # PyPI configuration file
 .pypirc
+
+**/node_modules
+**/dist
+**/.env
+**/.env.local
