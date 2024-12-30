@@ -1,16 +1,26 @@
 import asyncio
 import discord
 from discord import app_commands, ui, Interaction, Member
-# from typing import Literal
+from typing import Literal
 from supabase import create_client, Client
 from secret import *
 from ui import *
 
 
+class FakeUser(object):
+    def __init__(self, user_id):
+        self.id = self.display_name = user_id
+
+    def __str__(self):
+        return str(self.id)
+
 
 class FleetManager(discord.Client):
     def __init__(self, intents=discord.Intents):
         intents.message_content = True
+        intents.members = True
+        intents.guilds = True
+
         super().__init__(intents=intents)
         self.tree = app_commands.CommandTree(self)
         self.guild_list = {}
@@ -27,14 +37,18 @@ class FleetManager(discord.Client):
 
 
     async def update_user_ids(self):
-        for i in self.user_ids.keys():
-            if not self.user_ids[i]:
-                name = await self.fetch_user(i)
-                try:
-                    self.user_ids[i] = name.display_name
-                except AttributeError:
-                    self.user_ids[i] = None
+        for member in self.users:
+            self.user_ids[member.id] = member
 
+
+    def return_user(self, user_id: int):
+        for user in self.get_all_members():
+            # print(f"{user.display_name}({user.id}) == {user_id}")
+
+            if int(user.id) == int(user_id):
+                return user
+
+        return FakeUser(user_id)
 
 
     def update_ships(self):
@@ -42,7 +56,6 @@ class FleetManager(discord.Client):
         self.ships = resp.data
         for row in self.ships:
             self.user_ids[row["registered_to"]] = None
-
 
 
     def update_ship_models(self):
@@ -56,7 +69,6 @@ class FleetManager(discord.Client):
             self.user_ids[row['designer']] = None
 
 
-
     def update_shipyards(self):
         resp = self.db.table("shipyards").select("*").execute()
         for row in resp.data:
@@ -67,7 +79,6 @@ class FleetManager(discord.Client):
             self.user_ids[row['owner']] = None
 
 
-
     async def setup_hook(self):
         for guild in GUILDS:
             g = discord.Object(id=guild)
@@ -76,8 +87,6 @@ class FleetManager(discord.Client):
 
             self.guild_list[g] = guild
 
-            await self.update_user_ids()
-
 
     def register_ship(self, shipdata: dict):
         self.db.table("ships").insert(shipdata).execute()
@@ -85,6 +94,38 @@ class FleetManager(discord.Client):
 
 
 duarte = FleetManager(intents=discord.Intents.default())
+
+
+@duarte.tree.command()
+async def queryships(interaction: Interaction, member: Member):
+
+    resp1 = duarte.db.table("ships").select("*").eq("registered_to", member.id).execute()
+    resp2 = duarte.db.table("ship_models").select("*").execute()
+    models = {}
+
+    for row in resp2.data:
+        models[row["id"]] = row["name"]
+
+    embed = discord.Embed(title=f"Registered Ships for {member.display_name}", color=0x03336D)
+
+    ship_names = []
+    ship_statuses = []
+    ship_classes = []
+
+    for row in resp1.data:
+        model = models[row["model_id"]]
+        hull_number = get_hull_number(row["id"])
+
+        ship_names.append(hull_number + " " + row["name"])
+        ship_statuses.append(row["status"])
+        ship_classes.append(model)
+
+
+    embed.add_field(name="Name", value="\n".join(ship_names))
+    embed.add_field(name="Class", value="\n".join(ship_classes))
+    embed.add_field(name="Status", value="\n".join(ship_statuses))
+
+    await interaction.response.send_message(embed=embed, ephemeral=DEBUG)
 
 
 @duarte.tree.command()
@@ -105,7 +146,6 @@ async def reload(interaction: Interaction):
     duarte.update_ship_models()
     duarte.update_ships()
 
-    await duarte.update_user_ids()
     await interaction.response.send_message("Database reloaded!", ephemeral=True)
 
 
@@ -136,7 +176,7 @@ async def register(interaction: Interaction, name: str, registered_to: Member):
     duarte.register_ship(
         {
             'name': name,
-            'model_id': get_model_id(ship_model),
+            'model_id': get_model_id_by_name(ship_model),
             'shipyard_id': get_shipyard_id(shipyard),
             'registered_to': registered_to.id,
             'status': "Rearming",
@@ -145,7 +185,7 @@ async def register(interaction: Interaction, name: str, registered_to: Member):
     )
 
 
-def get_model_id(model):
+def get_model_id_by_name(model):
     return duarte.ship_models[model]['id']
 
 
@@ -153,13 +193,43 @@ def get_shipyard_id(shipyard):
     return duarte.shipyards[shipyard]['id']
 
 
+def get_hull_number(ship_id: int):
+    # get a list of all ships of a model matching our ships model
+    # for every instance of the constructed ship of the same model, incrememnt our hull number
+
+    ship_list = duarte.db.table("ships").select("*").execute().data
+
+    models = {}
+    same_models = []
+
+    for row in duarte.db.table("ship_models").select("*").execute().data:
+        models[row["id"]] = row["classification"]
+
+    ship = duarte.db.table("ships").select("*").eq("id", ship_id).execute().data.pop()  # should only be 1 result
+
+    for row in ship_list:
+        if row["model_id"] == ship["model_id"]:
+            same_models.append(row["id"])
+
+    n = str(same_models.index(ship["id"]) + 1)
+
+    if int(n) < 10:
+        n = "0" + n
+
+    hull_string = models[ship["model_id"]] + "-" + n
+
+
+    return hull_string
+
+
 def new_hull(model):
-    model_id = get_model_id(model)
+    model_id = get_model_id_by_name(model)
     hull_number = duarte.ship_models[model]['classification']
 
     ships = duarte.db.table("ships").select("*").eq("model_id", model_id).execute().data
 
     n = str(len(ships) + 1)
+
     if int(n) < 10:
         n = "0" + n
 

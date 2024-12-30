@@ -7,15 +7,15 @@ class ShipyardDropdown(Select):
     def __init__(self, fleetmanager):
         options = []
         self.fleetmanager = fleetmanager
-        for shipyard in self.fleetmanager.shipyards.keys():
-            name = self.fleetmanager.user_ids[self.fleetmanager.shipyards[shipyard]['owner']]
+        shipyards = self.fleetmanager.db.table("shipyards").select("*").execute().data
+
+        for row in shipyards:
+            owner = self.fleetmanager.return_user(row["owner"])
 
             options.append(SelectOption(
-                label=shipyard,
-                description="Operated by " +
-                str(name) or str(self.fleetmanager.shipyards[shipyard]['owner'])
+                label=row["name"],
+                description="Operated by " + owner.display_name)
               )
-             )
 
 
         super().__init__(placeholder="Shipyard...", min_values=1, max_values=1, options=options)

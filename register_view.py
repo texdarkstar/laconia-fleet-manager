@@ -16,8 +16,6 @@ class SubmitButton(Button):
         self.fleetmanager.update_ship_models()
         self.fleetmanager.update_ships()
 
-        await self.fleetmanager.update_user_ids()
-
         self.view.stop()
 
 
