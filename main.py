@@ -1,10 +1,13 @@
 import asyncio
 import discord
-from discord import app_commands, ui, Interaction, Member
+from discord import app_commands, ui, Interaction, Member, Intents
+from discord.ext import commands
 from typing import Literal
 from supabase import create_client, Client
 from secret import *
 from ui import *
+from cmd.ping import PingCog
+from cmd.register import RegisterCog
 
 
 class FakeUser(object):
@@ -15,14 +18,15 @@ class FakeUser(object):
         return str(self.id)
 
 
-class FleetManager(discord.Client):
-    def __init__(self, intents=discord.Intents):
+class FleetManager(commands.Bot):
+    def __init__(self, intents=Intents, *args, **kwargs):
         intents.message_content = True
         intents.members = True
         intents.guilds = True
+        self.command_prefix = "|"
 
-        super().__init__(intents=intents)
-        self.tree = app_commands.CommandTree(self)
+        super().__init__(intents=intents, *args, **kwargs)
+        # self.tree = app_commands.CommandTree(self)
         self.guild_list = {}
 
         self.db = create_client(POSGRES_URL, POSGRES_KEY)
@@ -80,6 +84,10 @@ class FleetManager(discord.Client):
 
 
     async def setup_hook(self):
+        await self.add_cog(PingCog(self))
+        await self.add_cog(RegisterCog(self))
+
+
         for guild in GUILDS:
             g = discord.Object(id=guild)
             self.tree.copy_global_to(guild=g)
@@ -87,13 +95,13 @@ class FleetManager(discord.Client):
 
             self.guild_list[g] = guild
 
-
     def register_ship(self, shipdata: dict):
         self.db.table("ships").insert(shipdata).execute()
 
 
 
-duarte = FleetManager(intents=discord.Intents.default())
+duarte = FleetManager(intents=Intents.default(), command_prefix="|")
+
 
 
 @duarte.tree.command()
@@ -127,10 +135,10 @@ async def queryships(interaction: Interaction, member: Member):
 
     await interaction.response.send_message(embed=embed, ephemeral=DEBUG)
 
-
-@duarte.tree.command()
-async def ping(interaction: Interaction):
-    await interaction.response.send_message("Pong", ephemeral=True)
+#
+# @duarte.tree.command()
+# async def ping(interaction: Interaction):
+#     await interaction.response.send_message("Pong", ephemeral=True)
 
 
 @duarte.tree.command()
@@ -149,40 +157,40 @@ async def reload(interaction: Interaction):
     await interaction.response.send_message("Database reloaded!", ephemeral=True)
 
 
-@duarte.tree.command()
-async def register(interaction: Interaction, name: str, registered_to: Member):
-    # view = ModelView(fleetmanager=duarte)
-    view = RegisterView(fleetmanager=duarte)
-    await interaction.response.send_message(view=view, ephemeral=True)
-    await view.wait()
-
-    await interaction.delete_original_response()
-
-
-    ship_model = view.children[0].values[0]
-    shipyard = view.children[1].values[0]
-
-    hull_number = new_hull(ship_model)
-
-    embed = discord.Embed(title="Ship Registered", description="", color=0x03336D)
-    embed.add_field(name="Name", value=" ".join([hull_number.upper(), name]))
-    embed.add_field(name="Class", value=ship_model)
-    embed.add_field(name="Registered to", value=registered_to.display_name)
-    embed.add_field(name="Shipyard", value=shipyard)
-
-    embed.set_thumbnail(url=registered_to.display_avatar.url)
-
-    await interaction.followup.send(embed=embed)
-    duarte.register_ship(
-        {
-            'name': name,
-            'model_id': get_model_id_by_name(ship_model),
-            'shipyard_id': get_shipyard_id(shipyard),
-            'registered_to': registered_to.id,
-            'status': "Rearming",
-            'location': shipyard + " shipyards"
-        }
-    )
+# @duarte.tree.command()
+# async def register(interaction: Interaction, name: str, registered_to: Member):
+#     # view = ModelView(fleetmanager=duarte)
+#     view = RegisterView(fleetmanager=duarte)
+#     await interaction.response.send_message(view=view, ephemeral=True)
+#     await view.wait()
+#
+#     await interaction.delete_original_response()
+#
+#
+#     ship_model = view.children[0].values[0]
+#     shipyard = view.children[1].values[0]
+#
+#     hull_number = new_hull(ship_model)
+#
+#     embed = discord.Embed(title="Ship Registered", description="", color=0x03336D)
+#     embed.add_field(name="Name", value=" ".join([hull_number.upper(), name]))
+#     embed.add_field(name="Class", value=ship_model)
+#     embed.add_field(name="Registered to", value=registered_to.display_name)
+#     embed.add_field(name="Shipyard", value=shipyard)
+#
+#     embed.set_thumbnail(url=registered_to.display_avatar.url)
+#
+#     await interaction.followup.send(embed=embed)
+#     duarte.register_ship(
+#         {
+#             'name': name,
+#             'model_id': get_model_id_by_name(ship_model),
+#             'shipyard_id': get_shipyard_id(shipyard),
+#             'registered_to': registered_to.id,
+#             'status': "Rearming",
+#             'location': shipyard + " shipyards"
+#         }
+#     )
 
 
 def get_model_id_by_name(model):
