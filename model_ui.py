@@ -8,13 +8,19 @@ class ModelDropdown(Select):
     def __init__(self, fleetmanager):
         options = []
         self.fleetmanager = fleetmanager
-        for model_name in self.fleetmanager.ship_models.keys():
-            classification = self.fleetmanager.ship_models[model_name]['classification']
+        ship_models = self.fleetmanager.db.table("ship_models").select("*").execute().data
+
+        for row in ship_models:
+            classification = row["classification"]
+            model_name = row["name"]
+
             options.append(SelectOption(label=model_name, description=classification))
+
 
         super().__init__(placeholder="Class...", min_values=1, max_values=1, options=options)
 
 
     async def callback(self, interaction: Interaction):
+        self.view.model_ready = True
         await interaction.response.defer()
 
