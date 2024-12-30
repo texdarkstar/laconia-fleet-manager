@@ -1,7 +1,7 @@
 import discord
 from discord import Interaction, app_commands
 from discord.ext import commands
-from util import *
+from utils import *
 from secret import DEBUG
 
 

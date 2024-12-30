@@ -2,7 +2,7 @@ import discord
 from discord import Interaction, Member, Embed, app_commands
 from discord.ext import commands
 from ui import *
-from util import *
+from utils import *
 
 
 class RegisterCog(commands.Cog, name="cogs.register"):
@@ -12,15 +12,21 @@ class RegisterCog(commands.Cog, name="cogs.register"):
 
     @app_commands.command(name="register")
     async def register(self, interaction: Interaction, name: str, registered_to: Member):
-        # view = ModelView(fleetmanager=duarte)
+        if not is_fullmember(interaction.user):
+            await interaction.response.send_message("You must be a full member to register a ship.", ephemeral=True)
+            return
+
         view = RegisterView(fleetmanager=self.fleetmanager)
         await interaction.response.send_message(view=view, ephemeral=True)
         await view.wait()
 
         await interaction.delete_original_response()
 
-        ship_model = view.children[0].values[0]
-        shipyard = view.children[1].values[0]
+        try:
+            ship_model = view.children[0].values[0]
+            shipyard = view.children[1].values[0]
+        except IndexError:  # this happens if the original ui was destroyed, we don't care
+            return
 
         hull_number = new_hull(self.fleetmanager, ship_model)
 
@@ -36,7 +42,7 @@ class RegisterCog(commands.Cog, name="cogs.register"):
             {
                 'name': name,
                 'model_id': get_model_id_by_name(self.fleetmanager, ship_model),
-                'shipyard_id': get_shipyard_id(self.fleetmanager, shipyard),
+                'shipyard_id': get_shipyard_id_by_name(self.fleetmanager, shipyard),
                 'registered_to': registered_to.id,
                 'status': "Rearming",
                 'location': shipyard + " shipyards"

@@ -6,7 +6,7 @@ from typing import Literal
 from supabase import create_client, Client
 from secret import *
 from ui import *
-from util import *
+from utils import *
 from cogs.ping import PingCog
 from cogs.register import RegisterCog
 
@@ -78,6 +78,10 @@ duarte = FleetManager(intents=Intents.default(), command_prefix="|")
 
 @duarte.tree.command()
 async def reload(interaction: Interaction):
+    if not is_officer(interaction.user):
+        await interaction.response.send_message("You are not authorized to use this command", ephemeral=True)
+        return
+
     cogs = []
 
     for cog in duarte.cogs.values():
@@ -92,6 +96,10 @@ async def reload(interaction: Interaction):
 
 @duarte.tree.command()
 async def load(interaction: Interaction, cog: str):
+    if not is_officer(interaction.user):
+        await interaction.response.send_message("You are not authorized to use this command", ephemeral=True)
+        return
+
     await duarte.load_extension("cogs." + cog)
     await interaction.response.send_message(f"Loaded cog.{cog}", ephemeral=True)
 

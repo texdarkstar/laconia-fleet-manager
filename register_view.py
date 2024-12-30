@@ -12,17 +12,22 @@ class SubmitButton(Button):
 
 
     async def callback(self, interaction: Interaction):
-        # self.fleetmanager.update_shipyards()
-        # self.fleetmanager.update_ship_models()
-        # self.fleetmanager.update_ships()
+        if self.view.shipyard_ready and self.view.model_ready:
+            self.view.stop()
 
-        self.view.stop()
+        elif not self.view.shipyard_ready:
+            await interaction.response.send_message("Please select a shipyard.", ephemeral=True, )
+
+        elif not self.view.model_ready:
+            await interaction.response.send_message("Please select a model.", ephemeral=True, )
 
 
 class RegisterView(View):
     def __init__(self, fleetmanager, timeout=180):
         super().__init__(timeout=timeout)
         self.fleetmanager = fleetmanager
+        self.shipyard_ready = False
+        self.model_ready = False
 
         self.add_item(ModelDropdown(self.fleetmanager))
         self.add_item(ShipyardDropdown(self.fleetmanager))

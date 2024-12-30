@@ -22,4 +22,5 @@ class ShipyardDropdown(Select):
 
 
     async def callback(self, interaction: Interaction):
+        self.view.shipyard_ready = True
         await interaction.response.defer()
