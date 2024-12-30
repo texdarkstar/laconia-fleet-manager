@@ -12,9 +12,9 @@ class SubmitButton(Button):
 
 
     async def callback(self, interaction: Interaction):
-        self.fleetmanager.update_shipyards()
-        self.fleetmanager.update_ship_models()
-        self.fleetmanager.update_ships()
+        # self.fleetmanager.update_shipyards()
+        # self.fleetmanager.update_ship_models()
+        # self.fleetmanager.update_ships()
 
         self.view.stop()
 
