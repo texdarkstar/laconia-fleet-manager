@@ -1,6 +1,6 @@
 from discord import Interaction, SelectOption
 from discord.ui import Select, View
-from secret import *
+from settings import *
 
 
 class ShipyardDropdown(Select):

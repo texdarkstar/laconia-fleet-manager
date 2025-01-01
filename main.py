@@ -4,7 +4,7 @@ from discord import app_commands, ui, Interaction, Member, Intents
 from discord.ext import commands
 from typing import Literal
 from supabase import create_client, Client
-from secret import *
+from settings import *
 from ui import *
 from utils import *
 from cogs.ping import PingCog
@@ -32,9 +32,13 @@ class FleetManager(commands.Bot):
 
         self.db = create_client(POSGRES_URL, POSGRES_KEY)
         self.ship_models = {}
-        self.shipyards = {}
         self.user_ids = {}
-        self.ships = {}
+        self.cached_ships = {}
+        self.fetch_ships()
+
+
+    def fetch_ships(self):
+        self.cached_ships = self.db.table("ships").select("*").execute().data
 
 
     async def update_user_ids(self):
@@ -71,6 +75,9 @@ class FleetManager(commands.Bot):
     def register_ship(self, shipdata: dict):
         self.db.table("ships").insert(shipdata).execute()
 
+
+    def update_status(self, ship_id: int, status: str):
+        self.db.table("ships").update({"status": status}).eq("id", ship_id).execute()
 
 
 duarte = FleetManager(intents=Intents.default(), command_prefix="|")

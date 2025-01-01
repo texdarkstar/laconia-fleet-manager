@@ -1,7 +1,7 @@
 from discord import Interaction, SelectOption
 from discord.ui import Select, View
 # import ship_classes
-from secret import *
+from settings import *
 
 
 class ModelDropdown(Select):

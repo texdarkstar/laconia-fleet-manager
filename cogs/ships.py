@@ -2,7 +2,7 @@ import discord
 from discord import Interaction, app_commands
 from discord.ext import commands
 from utils import *
-from secret import DEBUG
+from settings import DEBUG
 
 
 class ShipsCog(commands.Cog, name="cogs.ships"):
@@ -37,7 +37,7 @@ class ShipsCog(commands.Cog, name="cogs.ships"):
         embed.add_field(name="Class", value="\n".join(ship_classes))
         embed.add_field(name="Status", value="\n".join(ship_statuses))
 
-        await interaction.response.send_message(embed=embed, ephemeral=DEBUG)
+        await interaction.response.send_message(embed=embed)
 
 
 async def setup(fleetmanager):

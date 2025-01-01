@@ -29,12 +29,13 @@ def get_hull_number(fleetmanager, ship_id: int):
         if row["model_id"] == ship["model_id"]:
             same_models.append(row["id"])
 
-    n = str(same_models.index(ship["id"]) + 1)
+    n = same_models.index(ship["id"]) + 1
+    zero = ""
 
     if int(n) < 10:
-        n = "0" + n
+        zero = "0"
 
-    hull_string = models[ship["model_id"]] + "-" + n
+    hull_string = models[ship["model_id"]] + f"-{zero}" + n
 
 
     return hull_string
@@ -58,6 +59,18 @@ def new_hull(fleetmanager, model):
     hull_classification += "-" + n
 
     return hull_classification
+
+
+def get_ships_by_userid(fleetmanager, user_id):
+    resp = fleetmanager.db.table("ships").select("*").eq("registered_to", user_id).execute()
+
+    return resp.data
+
+
+def get_ships_by_shipid(fleetmanager, ship_id):
+    resp = fleetmanager.db.table("ships").select("*").eq("id", ship_id).execute()
+
+    return resp.data.pop() if resp.data else []
 
 
 def is_officer(user):
