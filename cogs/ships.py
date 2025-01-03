@@ -11,7 +11,11 @@ class ShipsCog(commands.Cog, name="cogs.ships"):
 
 
     @app_commands.command(name="ships")
-    async def ships(self, interaction: Interaction, member: discord.Member):
+    async def ships(self, interaction: Interaction, member: discord.User):
+
+        # isinstance(member, discord.Member)
+        print(repr(member))
+
         async with interaction.channel.typing():
             resp1 = self.fleetmanager.db.table("ships").select("*").eq("registered_to", member.id).execute()
             resp2 = self.fleetmanager.db.table("ship_models").select("*").execute()
