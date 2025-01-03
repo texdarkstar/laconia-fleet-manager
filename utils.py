@@ -1,9 +1,16 @@
 
-def get_model_id_by_name(fleetmanager, model):
-    resp = fleetmanager.db.table("ship_models").select("*").eq("name", model).execute().data
+def get_model_id_by_name(fleetmanager, model_name):
+    resp = fleetmanager.db.table("ship_models").select("*").eq("name", model_name).execute().data
 
     if resp:
         return resp[0]['id']
+
+
+def get_model_name_by_id(fleetmanager, model_id):
+    resp = fleetmanager.db.table("ship_models").select("*").eq("id", model_id).execute().data
+
+    if resp:
+        return resp[0]['name']
 
 
 def get_shipyard_id_by_name(fleetmanager, shipyard):
@@ -12,6 +19,12 @@ def get_shipyard_id_by_name(fleetmanager, shipyard):
     if resp:
         return resp[0]['id']
 
+
+def get_shipyard_name_by_id(fleetmanager, shipyard_id):
+    resp = fleetmanager.db.table("shipyards").select("*").eq("id", shipyard_id).execute().data
+
+    if resp:
+        return resp[0]['name']
 
 
 def get_hull_number(fleetmanager, ship_id: int):
@@ -35,14 +48,13 @@ def get_hull_number(fleetmanager, ship_id: int):
     if int(n) < 10:
         zero = "0"
 
-    hull_string = models[ship["model_id"]] + f"-{zero}" + n
+    hull_string = models[ship["model_id"]] + f"-{zero}" + str(n)
 
 
     return hull_string
 
 
-def new_hull(fleetmanager, model):
-    model_id = get_model_id_by_name(fleetmanager, model)
+def new_hull(fleetmanager, model_id):
     hull_classification = (
         fleetmanager.db.table("ship_models")
         .select("*").eq("id", model_id)
@@ -89,3 +101,4 @@ def is_fullmember(user):
             auth = True
 
     return is_officer(user) or auth
+

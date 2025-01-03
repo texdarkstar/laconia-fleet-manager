@@ -31,14 +31,20 @@ class FleetManager(commands.Bot):
         self.guild_list = {}
 
         self.db = create_client(POSGRES_URL, POSGRES_KEY)
+
         self.ship_models = {}
         self.user_ids = {}
-        self.cached_ships = {}
-        self.fetch_ships()
+        self.cached_ships = []
+        self.cached_ship_models = []
+        self.cached_shipyards = []
+
+        self.update_cache()
 
 
-    def fetch_ships(self):
+    def update_cache(self):
         self.cached_ships = self.db.table("ships").select("*").execute().data
+        self.cached_ship_models = self.db.table("ship_models").select("*").execute().data
+        self.cached_shipyards = self.db.table("shipyards").select("*").execute().data
 
 
     async def update_user_ids(self):
@@ -98,6 +104,8 @@ async def reload(interaction: Interaction):
         await duarte.reload_extension(cog.qualified_name)
 
     await interaction.response.send_message("Cogs reloaded", ephemeral=True)
+    duarte.update_cache()
+
     await duarte.sync_commands()
 
 

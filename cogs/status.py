@@ -33,7 +33,7 @@ class StatusCog(commands.Cog, name="cogs.status"):
 
 
     @status.autocomplete("ship_id")
-    async def autocomplete(self, interaction: Interaction, current: str) -> List[app_commands.Choice[str]]:
+    async def autocomplete_ship_id(self, interaction: Interaction, current: str) -> List[app_commands.Choice[str]]:
         ships = get_ships_by_userid(self.fleetmanager, interaction.user.id)
 
         return [
@@ -42,7 +42,7 @@ class StatusCog(commands.Cog, name="cogs.status"):
         ]
 
     @status.autocomplete("status")
-    async def autocomplete(self, interaction: Interaction, current: str) -> List[app_commands.Choice[str]]:
+    async def autocomplete_status(self, interaction: Interaction, current: str) -> List[app_commands.Choice[str]]:
         return [
             app_commands.Choice(name=value, value=value)
             for value in STATUS if current.lower() in value.lower()
