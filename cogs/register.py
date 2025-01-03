@@ -1,5 +1,5 @@
 import discord
-from discord import Interaction, Member, Embed, app_commands
+from discord import Interaction, User, Embed, app_commands
 from discord.ext import commands
 from typing import List
 from ui import *
@@ -14,11 +14,19 @@ class RegisterCog(commands.Cog, name="cogs.register"):
     @app_commands.command(name="register")
     async def register(self,
                        interaction: Interaction,
-                       name: str, ship_model: str,
-                       shipyard: str):
+                       name: str, ship_model: int,
+                       shipyard: int):
 
         if not is_fullmember(interaction.user):
             await interaction.response.send_message("Only members can register ships.", ephemeral=True)
+            return
+
+        if not is_valid_ship_model(self.fleetmanager, ship_model):
+            await interaction.response.send_message("Invalid ship model.", ephemeral=True)
+            return
+
+        if not is_valid_shipyard(self.fleetmanager, shipyard):
+            await interaction.response.send_message("Invalid shipyard.", ephemeral=True)
             return
 
         async with interaction.channel.typing():
@@ -35,8 +43,8 @@ class RegisterCog(commands.Cog, name="cogs.register"):
     @app_commands.command(name="forceregister")
     async def forceregister(self,
                             interaction: Interaction,
-                            name: str, registered_to: Member,
-                            ship_model: str, shipyard: str):
+                            name: str, registered_to: User,
+                            ship_model: int, shipyard: int):
 
         if not is_officer(interaction.user):
             await interaction.response.send_message("Only Officers can register ships to members.", ephemeral=True)

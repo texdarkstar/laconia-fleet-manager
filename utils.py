@@ -88,6 +88,22 @@ def get_ships_by_shipid(fleetmanager, ship_id):
         return []
 
 
+def is_valid_ship_model(fleetmanager, ship_model):
+    for model in fleetmanager.cached_ship_models:
+        if int(model["id"]) == int(ship_model):
+            return True
+
+    return False
+
+
+def is_valid_shipyard(fleetmanager, shipyard):
+    for yard in fleetmanager.cached_shipyards:
+        if int(yard["id"]) == int(shipyard):
+            return True
+
+    return False
+
+
 def is_officer(user):
     auth = False
     for role in user.roles:
