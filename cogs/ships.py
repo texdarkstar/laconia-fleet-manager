@@ -25,6 +25,7 @@ class ShipsCog(commands.Cog, name="cogs.ships"):
             ship_names = []
             ship_statuses = []
             ship_classes = []
+            table = ""
 
             for row in resp1.data:
                 model = models[row["model_id"]]
@@ -33,10 +34,15 @@ class ShipsCog(commands.Cog, name="cogs.ships"):
                 ship_names.append(hull_number + " " + row["name"])
                 ship_statuses.append(row["status"])
                 ship_classes.append(model)
+                full_name = f"{hull_number} {row['name']}"
+                if len(full_name) > 40:
+                    full_name = full_name[:40] + "..."
 
-            embed.add_field(name="Name", value="\n".join(ship_names))
-            embed.add_field(name="Class", value="\n".join(ship_classes))
-            embed.add_field(name="Status", value="\n".join(ship_statuses))
+                _row = f"> Name: {full_name}\n> Class: {model}\n> Status: {row['status']}"
+
+                table += _row + "\n\n"
+
+            embed.add_field(name="", value=table, inline=False)
 
             embed.set_thumbnail(url=member.display_avatar.url)
 
