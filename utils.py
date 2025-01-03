@@ -82,7 +82,10 @@ def get_ships_by_userid(fleetmanager, user_id):
 def get_ships_by_shipid(fleetmanager, ship_id):
     resp = fleetmanager.db.table("ships").select("*").eq("id", ship_id).execute()
 
-    return resp.data.pop() if resp.data else []
+    if resp.data:
+        return resp.data.pop()
+    else:
+        return []
 
 
 def is_officer(user):
