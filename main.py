@@ -103,10 +103,11 @@ async def reload(interaction: Interaction):
     for cog in cogs:
         await duarte.reload_extension(cog.qualified_name)
 
-    await interaction.response.send_message("Cogs reloaded", ephemeral=True)
     duarte.update_cache()
-
     await duarte.sync_commands()
+
+    await interaction.response.send_message("Reloaded", ephemeral=True)
+
 
 
 @duarte.tree.command()

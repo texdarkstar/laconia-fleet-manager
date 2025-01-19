@@ -3,6 +3,7 @@ from discord import Interaction, app_commands
 from discord.ext import commands
 from utils import *
 from settings import DEBUG
+from time import sleep
 
 
 class ShipsCog(commands.Cog, name="cogs.ships"):
@@ -13,7 +14,9 @@ class ShipsCog(commands.Cog, name="cogs.ships"):
     @app_commands.command(name="ships")
     async def ships(self, interaction: Interaction, member: discord.User):
         async with interaction.channel.typing():
-            resp1 = self.fleetmanager.db.table("ships").select("*").eq("registered_to", member.id).execute()
+            await interaction.response.defer()
+
+            resp1 = self.fleetmanager.db.table("ships").select("*").eq("registered_to", member.id).neq("status", "Destroyed").execute()
             resp2 = self.fleetmanager.db.table("ship_models").select("*").execute()
             models = {}
 
@@ -21,32 +24,38 @@ class ShipsCog(commands.Cog, name="cogs.ships"):
                 models[row["id"]] = row["name"]
 
             embed = discord.Embed(title=f"Registered Ships for {member.display_name}", color=0x03336D)
+            embed.set_thumbnail(url=member.display_avatar.url)
 
-            ship_names = []
-            ship_statuses = []
-            ship_classes = []
-            table = ""
+            buffer = sorted(resp1.data, key=lambda x: x["id"], reverse=True)
+            embeds = []
+            num_fields = 0
 
-            for row in resp1.data:
-                model = models[row["model_id"]]
-                hull_number = get_hull_number(self.fleetmanager, row["id"])
+            while buffer:
+                data = buffer.pop()
+                model = models[data["model_id"]]
+                hull_number = get_hull_number(self.fleetmanager, data["id"])
+                full_name = f"{hull_number} {data['name']}"
 
-                ship_names.append(hull_number + " " + row["name"])
-                ship_statuses.append(row["status"])
-                ship_classes.append(model)
-                full_name = f"{hull_number} {row['name']}"
                 if len(full_name) > 40:
                     full_name = full_name[:40] + "..."
 
-                _row = f"> Name: {full_name}\n> Class: {model}\n> Status: {row['status']}"
+                print(full_name)
+                row = f"> Name: {full_name}\n> Class: {model}\n> Status: {data['status']}"
 
-                table += _row + "\n\n"
+                if (len(embed) >= 6000) or (num_fields == 25):
+                    embeds.append(embed)
+                    embed = discord.Embed(color=0x03336D)
+                    print("New embed created")
+                    num_fields = 0
 
-            embed.add_field(name="", value=table, inline=False)
+                embed.add_field(name="", value=row, inline=False)
+                num_fields += 1
 
-            embed.set_thumbnail(url=member.display_avatar.url)
+            embeds.append(embed)
 
-            await interaction.response.send_message(embed=embed)
+            for e in embeds:
+                await interaction.followup.send(embed=e)
+                sleep(.2)
 
 
 async def setup(fleetmanager):
