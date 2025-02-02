@@ -17,9 +17,6 @@ class RegisterCog(commands.Cog, name="cogs.register"):
                        name: str, ship_model: int,
                        shipyard: int):
 
-        if not is_fullmember(interaction.user):
-            await interaction.response.send_message("Only members can register ships.", ephemeral=True)
-            return
 
         if not is_valid_ship_model(self.fleetmanager, ship_model):
             await interaction.response.send_message("Invalid ship model.", ephemeral=True)
