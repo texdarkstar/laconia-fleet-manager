@@ -55,7 +55,6 @@ class RegisterCog(commands.Cog, name="cogs.register"):
                             ship_model=ship_model,
                             shipyard=shipyard)
 
-
             await interaction.response.send_message(embed=embed)
 
 
@@ -90,7 +89,7 @@ class RegisterCog(commands.Cog, name="cogs.register"):
     async def autocomplete_shipyard(self, interaction: Interaction, current: str) -> List[app_commands.Choice[str]]:
         return [
             app_commands.Choice(name=i["name"], value=str(i["id"]))
-            for i in self.fleetmanager.cached_shipyards if current.lower() in i["name"].lower()
+            for i in self.fleetmanager.cached_tables["shipyards"] if current.lower() in i["name"].lower()
         ]
 
 
@@ -100,7 +99,7 @@ class RegisterCog(commands.Cog, name="cogs.register"):
     async def autocomplete_ship_model(self, interaction: Interaction, current: str) -> List[app_commands.Choice[str]]:
         return [
             app_commands.Choice(name=i["name"], value=str(i["id"]))
-            for i in self.fleetmanager.cached_ship_models if current.lower() in i["name"].lower()
+            for i in self.fleetmanager.cached_tables["ship_models"] if current.lower() in i["name"].lower()
         ]
 
 

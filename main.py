@@ -9,6 +9,9 @@ from ui import *
 from utils import *
 from cogs.ping import PingCog
 from cogs.register import RegisterCog
+from sys import stderr
+from os.path import exists
+import logging
 
 
 class FakeUser(object):
@@ -24,6 +27,18 @@ class FleetManager(commands.Bot):
         intents.message_content = True
         intents.members = True
         intents.guilds = True
+        self.logger = logging.getLogger(__name__)
+        n = 1
+        logfile = f"duarte_{n}.log"
+
+        while exists(f"duarte_{n}.log"):
+            n += 1
+
+        logging.basicConfig(filename=logfile, level=logging.INFO)
+
+        # self.logger.addHandler(logging.StreamHandler(stderr))
+        self.logger.info("Starting up")
+
         self.command_prefix = "|"
 
         super().__init__(intents=intents, *args, **kwargs)
@@ -34,17 +49,19 @@ class FleetManager(commands.Bot):
 
         self.ship_models = {}
         self.user_ids = {}
-        self.cached_ships = []
-        self.cached_ship_models = []
-        self.cached_shipyards = []
-
+        # self.cached_ships = []
+        # self.cached_ship_models = []
+        # self.cached_shipyards = []
+        self.cached_tables = {}
         self.update_cache()
 
 
     def update_cache(self):
-        self.cached_ships = self.db.table("ships").select("*").execute().data
-        self.cached_ship_models = self.db.table("ship_models").select("*").execute().data
-        self.cached_shipyards = self.db.table("shipyards").select("*").execute().data
+        self.cached_tables["ships"] = self.db.table("ships").select("*").execute().data
+        self.cached_tables["ship_models"] = self.db.table("ship_models").select("*").execute().data
+        self.cached_tables["shipyards"] = self.db.table("shipyards").select("*").execute().data
+
+        self.logger.info("Cache updated")
 
 
     async def update_user_ids(self):
@@ -77,6 +94,9 @@ class FleetManager(commands.Bot):
 
         await self.sync_commands()
 
+    @commands.after_invoke
+    async def at_after_invoke(self, ctx):
+        self.update_cache()
 
     def register_ship(self, shipdata: dict):
         self.db.table("ships").insert(shipdata).execute()
@@ -92,33 +112,20 @@ duarte = FleetManager(intents=Intents.default(), command_prefix="|")
 @duarte.tree.command()
 async def reload(interaction: Interaction):
     if not is_officer(interaction.user):
+        duarte.logger.info(f"User {interaction.user} tried to use /reload")
         await interaction.response.send_message("You are not authorized to use this command", ephemeral=True)
         return
 
     cogs = []
-
     for cog in duarte.cogs.values():
-        cogs.append(cog)
+        cogs.append(cog.qualified_name)
 
     for cog in cogs:
-        await duarte.reload_extension(cog.qualified_name)
-
-    duarte.update_cache()
-    await duarte.sync_commands()
+        await duarte.reload_extension(cog)
 
     await interaction.response.send_message("Reloaded", ephemeral=True)
 
-
-
-@duarte.tree.command()
-async def load(interaction: Interaction, cog: str):
-    if not is_officer(interaction.user):
-        await interaction.response.send_message("You are not authorized to use this command", ephemeral=True)
-        return
-
-    await duarte.load_extension("cogs." + cog)
-    await interaction.response.send_message(f"Loaded cog.{cog}", ephemeral=True)
-
+    duarte.update_cache()
     await duarte.sync_commands()
 
 

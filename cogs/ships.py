@@ -16,8 +16,16 @@ class ShipsCog(commands.Cog, name="cogs.ships"):
         async with interaction.channel.typing():
             await interaction.response.defer()
 
-            resp1 = self.fleetmanager.db.table("ships").select("*").eq("registered_to", member.id).neq("status", "Destroyed").execute()
-            resp2 = self.fleetmanager.db.table("ship_models").select("*").execute()
+            resp1 = self.fleetmanager.db.table("ships")\
+                .select("*")\
+                .eq("registered_to", member.id)\
+                .neq("status", "Destroyed")\
+                .execute()
+
+            resp2 = self.fleetmanager.db.table("ship_models")\
+                .select("*")\
+                .execute()
+
             models = {}
 
             for row in resp2.data:
@@ -39,13 +47,13 @@ class ShipsCog(commands.Cog, name="cogs.ships"):
                 if len(full_name) > 40:
                     full_name = full_name[:40] + "..."
 
-                print(full_name)
+                # print(full_name)
                 row = f"> Name: {full_name}\n> Class: {model}\n> Status: {data['status']}"
 
                 if (len(embed) >= 6000) or (num_fields == 25):
                     embeds.append(embed)
                     embed = discord.Embed(color=0x03336D)
-                    print("New embed created")
+                    # print("New embed created")
                     num_fields = 0
 
                 embed.add_field(name="", value=row, inline=False)
@@ -55,7 +63,7 @@ class ShipsCog(commands.Cog, name="cogs.ships"):
 
             for e in embeds:
                 await interaction.followup.send(embed=e)
-                sleep(.2)
+                sleep(.1)
 
 
 async def setup(fleetmanager):

@@ -12,6 +12,7 @@ class PingCog(commands.Cog, name="cogs.ping"):
     @app_commands.command(name="ping")
     async def ping(self, interaction: Interaction):
         await interaction.response.send_message("pong", ephemeral=True)
+        # raise NotImplementedError("Ping command not implemented.")
 
 
 async def setup(fleetmanager):

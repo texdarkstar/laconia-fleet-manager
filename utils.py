@@ -1,42 +1,34 @@
-
-def get_model_id_by_name(fleetmanager, model_name):
-    resp = fleetmanager.db.table("ship_models").select("*").eq("name", model_name).execute().data
-
-    if resp:
-        return resp[0]['id']
-
-
 def get_model_name_by_id(fleetmanager, model_id):
-    resp = fleetmanager.db.table("ship_models").select("*").eq("id", model_id).execute().data
-
-    if resp:
-        return resp[0]['name']
-
-
-def get_shipyard_id_by_name(fleetmanager, shipyard):
-    resp = fleetmanager.db.table("shipyards").select("*").eq("name", shipyard).execute().data
-
-    if resp:
-        return resp[0]['id']
+    # resp = fleetmanager.db.table("ship_models").select("*").eq("id", model_id).execute().data
+    for model in fleetmanager.cached_tables["ship_models"]:
+        if int(model["id"]) == int(model_id):
+            return model["name"]
 
 
 def get_shipyard_name_by_id(fleetmanager, shipyard_id):
-    resp = fleetmanager.db.table("shipyards").select("*").eq("id", shipyard_id).execute().data
-
-    if resp:
-        return resp[0]['name']
+    # resp = fleetmanager.db.table("shipyards").select("*").eq("id", shipyard_id).execute().data
+    for yard in fleetmanager.cached_tables["shipyards"]:
+        if int(yard["id"]) == int(shipyard_id):
+            return yard["name"]
 
 
 def get_hull_number(fleetmanager, ship_id: int):
-    ship_list = fleetmanager.db.table("ships").select("*").execute().data
+    # ship_list = fleetmanager.db.table("ships").select("*").execute().data
+    ship_list = fleetmanager.cached_tables["ships"]
 
     models = {}
     same_models = []
 
-    for row in fleetmanager.db.table("ship_models").select("*").execute().data:
+    for row in fleetmanager.cached_tables["ship_models"]:
         models[row["id"]] = row["classification"]
 
-    ship = fleetmanager.db.table("ships").select("*").eq("id", ship_id).execute().data.pop()
+    # ship = fleetmanager.db.table("ships").select("*").eq("id", ship_id).execute().data.pop()
+    ship = {}
+    for _ship in fleetmanager.cached_tables["ships"]:
+        if int(_ship["id"]) == int(ship_id):
+            ship = _ship
+            break
+
 
     for row in ship_list:
         if row["model_id"] == ship["model_id"]:
@@ -73,23 +65,8 @@ def new_hull(fleetmanager, model_id):
     return hull_classification
 
 
-def get_ships_by_userid(fleetmanager, user_id):
-    resp = fleetmanager.db.table("ships").select("*").eq("registered_to", user_id).execute()
-
-    return resp.data
-
-
-def get_ships_by_shipid(fleetmanager, ship_id):
-    resp = fleetmanager.db.table("ships").select("*").eq("id", ship_id).execute()
-
-    if resp.data:
-        return resp.data.pop()
-    else:
-        return []
-
-
 def is_valid_ship_model(fleetmanager, ship_model):
-    for model in fleetmanager.cached_ship_models:
+    for model in fleetmanager.cached_tables["ship_models"]:
         if int(model["id"]) == int(ship_model):
             return True
 
@@ -97,7 +74,7 @@ def is_valid_ship_model(fleetmanager, ship_model):
 
 
 def is_valid_shipyard(fleetmanager, shipyard):
-    for yard in fleetmanager.cached_shipyards:
+    for yard in fleetmanager.cached_tables["shipyards"]:
         if int(yard["id"]) == int(shipyard):
             return True
 

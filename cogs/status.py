@@ -20,7 +20,12 @@ class StatusCog(commands.Cog, name="cogs.status"):
             await interaction.response.send_message("Invalid status.")
             return
 
-        ship = get_ships_by_shipid(self.fleetmanager, ship_id)
+        # ship = get_ships_by_shipid(self.fleetmanager, ship_id)
+        for _ship in self.fleetmanager.cached_tables["ships"]:
+            # print(_ship)
+            if int(_ship["id"]) == int(ship_id):
+                ship = _ship
+                break
 
         if ship and int(ship["registered_to"]) != int(interaction.user.id):
             await interaction.response.send_message("This ship is not registered to you.")
@@ -36,7 +41,12 @@ class StatusCog(commands.Cog, name="cogs.status"):
 
     @setstatus.autocomplete("ship_id")
     async def autocomplete_ship_id(self, interaction: Interaction, current: str) -> List[Choice[str]]:
-        ships = get_ships_by_userid(self.fleetmanager, interaction.user.id)
+        # ships = get_ships_by_userid(self.fleetmanager, interaction.user.id)
+        ships = []
+
+        for _ship in self.fleetmanager.cached_tables["ships"]:
+            if int(_ship["registered_to"]) == int(interaction.user.id):
+                ships.append(_ship)
 
         return [
             app_commands.Choice(name=i["name"], value=str(i["id"]))
